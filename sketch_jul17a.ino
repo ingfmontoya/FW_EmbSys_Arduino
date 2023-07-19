@@ -1,7 +1,8 @@
 #include <SPI.h>
-#include <mcp2515.h>
+#include <mcp2515.h> //download zip file library https://github.com/autowp/arduino-mcp2515
 
-#define TEST_ID  0x03F2
+//#define TEST_ID  0x03F2
+#define TEST_ID  0x80000000
 
 // Printf Variables
 char msgString[128];
