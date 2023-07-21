@@ -1,8 +1,9 @@
 #include <SPI.h>
 #include <mcp2515.h> //download zip file library https://github.com/autowp/arduino-mcp2515
+#include <stdint.h>
+#include <stdio.h>
 
-//#define TEST_ID  0x03F2
-#define TEST_ID  0x80000000
+#define CLUSTER_ID  0x03F2 //Unique identifier for the cluster in this project
 
 // Printf Variables
 char msgString[128];
@@ -15,23 +16,24 @@ byte data[] = {0xAA, 0x55, 0x01, 0x10, 0xFF, 0x12, 0x34, 0x56};// Generic CAN da
 
 // CAN RX Variables
 struct can_frame canMsgR;
-
+void * voidptr = &canMsgR;
+char * ptr = voidptr;
 #define CAN0_INT  2               // Set INT to pin 2                   
 MCP2515 mcp2515(10);              // Set CS to pin 10
 
 void setup() {
   //Setup the CAN_TX message
-  canMsgS.can_id = TEST_ID;   canMsgS.can_dlc = 8; 
+  canMsgS.can_id = CLUSTER_ID;   canMsgS.can_dlc = 8; 
   canMsgS.data[0] = data[0];  canMsgS.data[1] = data[1];  canMsgS.data[2] = data[2];  canMsgS.data[3] = data[3]; 
   canMsgS.data[4] = data[4];  canMsgS.data[5] = data[5];  canMsgS.data[6] = data[6];  canMsgS.data[7] = data[7];
-  
-  Serial.begin(9600);
+  //ptr = (byte *) canMsgR;
+  Serial.begin(115200);
   
   SPI.begin();
   if( mcp2515.reset() == MCP2515 :: ERROR_OK ){
     mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ);
-    //mcp2515.setNormalMode();
-    mcp2515.setLoopbackMode();
+    mcp2515.setNormalMode();
+    //mcp2515.setLoopbackMode();
     Serial.println("MCP2515 Initialized Successfully!");
   }
   else
@@ -45,15 +47,25 @@ void loop() {
   if(!digitalRead(CAN0_INT))               // If CAN0_INT pin is low, read receive buffer
   {
     mcp2515.readMessage(&canMsgR);
-    
+    if (canMsgR.can_id == CLUSTER_ID){
+        //Serial.print("Hola");
+        Serial.write(0xFA);
+        Serial.write(0xFB);
+        Serial.write(0xFC);
+        for(char i = 0 ; i < sizeof(canMsgR); i++){
+          Serial.write(ptr[i]);
+    }
+    }
+/*
     Serial.println("");
     if((canMsgR.can_id & 0x80000000) == 0x80000000)     // Determine if ID is standard (11 bits) or extended (29 bits)
       sprintf(msgString, "Extended ID: 0x%.8lX DLC: %1d  Data: ", (canMsgR.can_id & 0x1FFFFFFF), canMsgR.can_dlc);
     else
       sprintf(msgString, "Standard ID: 0x%.3lX DLC: %1d  Data: ", canMsgR.can_id, canMsgR.can_dlc);
-  
+    
     Serial.print(msgString);
-    if((canMsgR.can_id & 0x40000000) == 0x40000000){  // message is a remote request frame?
+    //if((canMsgR.can_id & 0x40000000) == 0x40000000){  // message is a remote request frame?
+    if((canMsgR.can_id & 0x123) == 0x123){  // message is a remote request frame?
       sprintf(msgString, " REMOTE REQUEST FRAME");
       Serial.print(msgString);
       } 
@@ -63,14 +75,14 @@ void loop() {
         Serial.print(msgString);
       }
     }
-  }
+*/  }
   if(millis() - prevTX >= invlTX){           // Send this at a one second interval. 
     prevTX = millis();
-    Serial.print("  ");
-    
+    //Serial.print("  ");
+    /*
     if( mcp2515.sendMessage(&canMsgS) == MCP2515 :: ERROR_OK )
-      Serial.print("CAN Message Sent Successfully!");
+     Serial.print("CAN Message Sent Successfully!");
     else
-      Serial.print("Error Sending CAN Message...");
+      Serial.print("Error Sending CAN Message...");*/
   }
 }
