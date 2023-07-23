@@ -2,6 +2,10 @@
 #include <mcp2515.h> //download zip file library https://github.com/autowp/arduino-mcp2515
 #include <stdint.h>
 
+/*For testing, you can use the following string
+F1 03 00 00 08 00 00 00 10 20 30 40 50 60 70 80 FA FB FC
+paste in Hex in  Commix 1.4 (or your preferred Serial console ) and send it as HEX
+*/ 
 
 /*Serial Ring Buffer*/
 #define SIZE_SERIAL_BUFFER 256/*size of serial ring buffer*/
@@ -18,8 +22,8 @@ volatile strserial serial;
 
 /*Ring buffer Init*/
 void ring_buffer_init(void){
-  serial.index_data_processced = 0xff;
-  serial.index_data_received = 0x00;
+  serial.index_data_processced = 0x01;
+  serial.index_data_received = 0xff;
   serial.packets_received = 0; 
 }
 
@@ -78,9 +82,9 @@ void loop() {
   if (serial.packets_received) {
     //cast serial to can structure
     for(uint8_t i = 0 ; i < sizeof(canMsgR); i++)
-      ptrT[i] = serial.buffer[++serial.index_data_processced];  
+      ptrT[i] = serial.buffer[++serial.index_data_processced];
     serial.index_data_processced+=3;
-    
+
     //Send can message  
     if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK )
       Serial.print("Error Sending CAN Message...");
@@ -98,11 +102,10 @@ void serialEvent() {
   while (Serial.available()) {
     // get the new byte:
     serial.buffer[++serial.index_data_received] = (uint8_t)Serial.read();
-
     //Detect end of frame
     if(serial.buffer[serial.index_data_received] == end_of_frame_patern[2])
       if(serial.buffer[serial.index_data_received - 1] == end_of_frame_patern[1])
-        if(serial.buffer[serial.index_data_received - 2] == end_of_frame_patern[0])
+        if(serial.buffer[serial.index_data_received - 2] == end_of_frame_patern[0])         
           serial.packets_received++;//End of frame detected, increased counter
   }
 }
