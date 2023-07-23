@@ -43,9 +43,13 @@ void * voidptrR = &canMsgR;//Cast canMsgR to void pointer
 char * ptrR = voidptrR;//Cast canMsgR to char pointer
 
 #define CAN0_INT  2               // Set INT to pin 2                   
+uint8_t flag_CAN_Message_received = 0;
 MCP2515 mcp2515(10);              // Set CS to pin 10
 
+
 void setup() {
+  pinMode(CAN0_INT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(CAN0_INT), CANinterrupt, FALLING);
   Serial.begin(115200);
   //Initialize Ring Buffer
   ring_buffer_init();
@@ -63,8 +67,9 @@ void setup() {
 }
 
 void loop() {
-  if(!digitalRead(CAN0_INT))//If CAN0_INT pin is low, read receive CAN buffer
+  if(flag_CAN_Message_received)//If CAN0_INT pin is low, read receive CAN buffer
   {
+    flag_CAN_Message_received = 0;
     mcp2515.readMessage(&canMsgR);//Receive CAN buffer
     
     if (canMsgR.can_id == CLUSTER_ID){
@@ -77,10 +82,6 @@ void loop() {
       Serial.write(end_of_frame_patern[1]);
       Serial.write(end_of_frame_patern[2]);
     } 
-    while(!digitalRead(CAN0_INT))
-      ;
-
-
   }
 
   //serial packet received
@@ -101,11 +102,17 @@ void loop() {
   }
 }
 
+void CANinterrupt(){
+  flag_CAN_Message_received = 1;
+
+}
+
 /*
   SerialEvent occurs whenever a new data comes in the hardware serial RX. This
   routine is run between each time loop() runs, so using delay inside loop can
   delay response. Multiple bytes of data may be available.
 */
+
 void serialEvent() {
   while (Serial.available()) {
     // get the new byte:
