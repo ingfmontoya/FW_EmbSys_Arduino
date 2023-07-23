@@ -66,6 +66,7 @@ void loop() {
   if(!digitalRead(CAN0_INT))//If CAN0_INT pin is low, read receive CAN buffer
   {
     mcp2515.readMessage(&canMsgR);//Receive CAN buffer
+    
     if (canMsgR.can_id == CLUSTER_ID){
       //serial send can structure
       for(uint8_t i = 0 ; i < sizeof(canMsgR); i++)
@@ -76,6 +77,10 @@ void loop() {
       Serial.write(end_of_frame_patern[1]);
       Serial.write(end_of_frame_patern[2]);
     } 
+    while(!digitalRead(CAN0_INT))
+      ;
+
+
   }
 
   //serial packet received
