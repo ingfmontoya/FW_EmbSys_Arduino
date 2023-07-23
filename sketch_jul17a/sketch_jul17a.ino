@@ -90,6 +90,9 @@ void loop() {
       Serial.print("Error Sending CAN Message...");
     
     serial.packets_received--;//serial packet proseced 
+    if(! serial.packets_received ){
+      serial.index_data_processced = serial.index_data_received;
+    }
   }
 }
 
