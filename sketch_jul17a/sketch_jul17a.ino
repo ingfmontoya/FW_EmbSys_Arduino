@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /*For testing, you can use the following string
-F1 03 00 00 08 00 00 00 10 20 30 40 50 60 70 80 FA FB FC
+70 01 00 00 08 00 00 00 10 20 30 40 50 60 70 80 FA FB FC
 paste in Hex in  Commix 1.4 (or your preferred Serial console ) and send it as HEX
 */ 
 
@@ -46,14 +46,7 @@ char * ptrR = voidptrR;//Cast canMsgR to char pointer
 uint8_t flag_CAN_Message_received = 0;
 MCP2515 mcp2515(10);              // Set CS to pin 10
 
-
-void setup() {
-  pinMode(CAN0_INT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CAN0_INT), CANinterrupt, FALLING);
-  Serial.begin(115200);
-  //Initialize Ring Buffer
-  ring_buffer_init();
-
+void mcp2515_init(void){
   SPI.begin();
   if( mcp2515.reset() == MCP2515 :: ERROR_OK ){
     mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ);
@@ -63,6 +56,17 @@ void setup() {
   }
   else
     Serial.println("Error Initializing MCP2515...");
+}
+
+void setup() {
+  pinMode(CAN0_INT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(CAN0_INT), CANinterrupt, FALLING);
+  Serial.begin(115200);
+  //Initialize Ring Buffer
+  ring_buffer_init();
+  mcp2515_init();
+  
+
   pinMode(CAN0_INT, INPUT);// Configuring pin for /INT input
 }
 
@@ -70,9 +74,12 @@ void loop() {
   if(flag_CAN_Message_received)//If CAN0_INT pin is low, read receive CAN buffer
   {
     flag_CAN_Message_received = 0;
-    mcp2515.readMessage(&canMsgR);//Receive CAN buffer
+    if( mcp2515.readMessage(&canMsgR) != MCP2515 :: ERROR_OK ){//Receive CAN buffer
+      Serial.print("Error receiving CAN Message...");
+      mcp2515_init();
+    }
     
-    if (canMsgR.can_id == CLUSTER_ID){
+   // if (canMsgR.can_id == CLUSTER_ID){
       //serial send can structure
       for(uint8_t i = 0 ; i < sizeof(canMsgR); i++)
         Serial.write(ptrR[i]);
@@ -81,7 +88,7 @@ void loop() {
       Serial.write(end_of_frame_patern[0]);
       Serial.write(end_of_frame_patern[1]);
       Serial.write(end_of_frame_patern[2]);
-    } 
+    //} 
   }
 
   //serial packet received
@@ -92,8 +99,11 @@ void loop() {
     serial.index_data_processced+=3;
 
     //Send can message  
-    if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK )
+    if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK ){
       Serial.print("Error Sending CAN Message...");
+      mcp2515_init();
+    }
+      
     
     serial.packets_received--;//serial packet proseced 
     if(! serial.packets_received ){
