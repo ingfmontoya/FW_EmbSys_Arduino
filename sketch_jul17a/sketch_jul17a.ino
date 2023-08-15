@@ -9,6 +9,8 @@ paste in Hex in  Commix 1.4 (or your preferred Serial console ) and send it as H
 
 /*Serial Ring Buffer*/
 #define SIZE_SERIAL_BUFFER 256/*size of serial ring buffer*/
+#define CAN_RESET_TIMEOUT 5000/*reset can comunication after CAN_RESET_TIMEOUT millis without mesagess*/
+
 uint8_t end_of_frame_patern[2]={0xFA,0XFB};
 
 /*Declarate struct of serial ring buffer*/
@@ -73,7 +75,7 @@ void setup() {
 }
 
 void loop() {
-  if(millis()-time >= 5000)
+  if(millis()-time >= CAN_RESET_TIMEOUT)
     mcp2515_init();
 
   if(flag_CAN_Message_received)//If CAN0_INT pin is low, read receive CAN buffer
