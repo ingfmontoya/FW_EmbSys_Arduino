@@ -85,17 +85,16 @@ void loop() {
       Serial.print("Error receiving CAN Message...");
       mcp2515_init();
     }
-    
-   // if (canMsgR.can_id == CLUSTER_ID){
+      //Serial send waste
+      Serial.write(ptrR[0]);
       //serial send can structure
       for(uint8_t i = 0 ; i < canMsgR.can_dlc + 5 ; i++)
-      //for(uint8_t i = 0 ; i < sizeof(canMsgR); i++)//
         Serial.write(ptrR[i]);
 
       // serial send end of frame patern
       Serial.write(end_of_frame_patern[0]);
       Serial.write(end_of_frame_patern[1]);
-    //} 
+  
     time = millis();
   }
 
