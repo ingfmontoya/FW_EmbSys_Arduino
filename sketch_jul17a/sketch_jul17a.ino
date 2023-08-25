@@ -12,6 +12,8 @@ paste in Hex in  Commix 1.4 (or your preferred Serial console ) and send it as H
 #define CAN_RESET_TIMEOUT 5000/*reset can comunication after CAN_RESET_TIMEOUT millis without mesagess*/
 #define TOGGLE_LIGHTS 0X01
 
+#define EMERGENCY_LIGHTS_CAN_ID 0X170
+
 uint8_t end_of_frame_patern[2]={0xFA,0XFB};
 
 /*Declarate struct of serial ring buffer*/
@@ -110,9 +112,9 @@ void loop() {
   if (serial.packets_received) {
     //cast serial to can structure
 
-    if(serial.buffer[++serial.index_data_processced]==TOGGLE_LIGHTS)
+    if(serial.buffer[++serial.index_data_processced]==TOGGLE_LIGHTS)//Solicita el cambio de estado de las luces de emergencia
     {
-      canMsgT.can_id=0X170;
+      canMsgT.can_id=EMERGENCY_LIGHTS_CAN_ID;
       canMsgT.can_dlc=0X01;
       //Send can message  
       if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK ){
