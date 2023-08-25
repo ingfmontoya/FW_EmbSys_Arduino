@@ -27,8 +27,8 @@ volatile strserial serial;
 
 /*Ring buffer Init*/
 void ring_buffer_init(void){
-  serial.index_data_processced = 0x01;
-  serial.index_data_received = 0xff;
+  serial.index_data_processced = 0x00;
+  serial.index_data_received = 0x00;
   serial.packets_received = 0; 
 }
 
