@@ -10,6 +10,7 @@ paste in Hex in  Commix 1.4 (or your preferred Serial console ) and send it as H
 /*Serial Ring Buffer*/
 #define SIZE_SERIAL_BUFFER 256/*size of serial ring buffer*/
 #define CAN_RESET_TIMEOUT 5000/*reset can comunication after CAN_RESET_TIMEOUT millis without mesagess*/
+#define TOGGLE_LIGHTS 0X01
 
 uint8_t end_of_frame_patern[2]={0xFA,0XFB};
 
@@ -57,10 +58,11 @@ void mcp2515_init(void){
     mcp2515.setBitrate(CAN_500KBPS, MCP_8MHZ);
     mcp2515.setNormalMode();
     //mcp2515.setLoopbackMode();
-    Serial.println("MCP2515 Initialized Successfully!");
+    //Serial.println("MCP2515 Initialized Successfully!");
   }
   else
-    Serial.println("Error Initializing MCP2515...");
+    ;
+    //Serial.println("Error Initializing MCP2515...");
 }
 
 void setup() {
@@ -82,14 +84,20 @@ void loop() {
   {
     flag_CAN_Message_received = 0;
     if( mcp2515.readMessage(&canMsgR) != MCP2515 :: ERROR_OK ){//Receive CAN buffer
-      Serial.print("Error receiving CAN Message...");
+      //Serial.print("Error receiving CAN Message...");
       mcp2515_init();
     }
       //Serial send waste
-      Serial.write(ptrR[0]);
+
+      Serial.write(0xff);
+      Serial.write(0xfc);
+      Serial.write(0xfd);
       //serial send can structure
-      for(uint8_t i = 0 ; i < canMsgR.can_dlc + 5 ; i++)
+      //for(uint8_t i = 0 ; i < canMsgR.can_dlc + 5 ; i++)
+      for(uint8_t i = 0 ; i < sizeof(canMsgR) ; i++){
         Serial.write(ptrR[i]);
+        ptrR[i]=0;
+      }
 
       // serial send end of frame patern
       Serial.write(end_of_frame_patern[0]);
@@ -101,16 +109,19 @@ void loop() {
   //serial packet received
   if (serial.packets_received) {
     //cast serial to can structure
-    for(uint8_t i = 0 ; i < sizeof(canMsgR); i++)
-      ptrT[i] = serial.buffer[++serial.index_data_processced];
-    serial.index_data_processced+=3;
 
-    //Send can message  
-    if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK ){
-      Serial.print("Error Sending CAN Message...");
-      mcp2515_init();
+    if(serial.buffer[++serial.index_data_processced]==TOGGLE_LIGHTS)
+    {
+      canMsgT.can_id=0X170;
+      canMsgT.can_dlc=0X01;
+      //Send can message  
+      if( mcp2515.sendMessage(&canMsgT) != MCP2515 :: ERROR_OK ){
+        //Serial.print("Error Sending CAN Message...");
+        mcp2515_init();
+      }
+
     }
-       
+    serial.index_data_processced+=2;
     serial.packets_received--;//serial packet proseced 
     if(! serial.packets_received ){
       serial.index_data_processced = serial.index_data_received;
