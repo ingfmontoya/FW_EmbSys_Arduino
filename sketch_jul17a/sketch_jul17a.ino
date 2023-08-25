@@ -1,6 +1,7 @@
 #include <SPI.h>
 #include <mcp2515.h> //download zip file library https://github.com/autowp/arduino-mcp2515
 #include <stdint.h>
+#include<avr/wdt.h> /* Header for watchdog timers in AVR */
 
 /*For testing, you can use the following string
 70 01 00 00 08 00 00 00 10 20 30 40 50 60 70 80 FA FB FC
@@ -73,6 +74,11 @@ void setup() {
   Serial.begin(115200);
   //Initialize Ring Buffer
   ring_buffer_init();
+  
+  wdt_disable();  /* Disable the watchdog and wait for more than 2 seconds */
+  delay(3000);  /* Done so that the Arduino doesn't keep resetting infinitely in case of wrong configuration */
+  wdt_enable(WDTO_2S);  /* Enable the watchdog with a timeout of 2 seconds*/
+
   mcp2515_init();
   pinMode(CAN0_INT, INPUT);// Configuring pin for /INT input
   time = millis();
@@ -108,6 +114,8 @@ void loop() {
       Serial.write(end_of_frame_patern[0]);
       Serial.write(end_of_frame_patern[1]);
       /*********END TRANSMIT CAN MESSAGE BY UART**********/
+
+      wdt_reset();  /* Reset the watchdog */
   
     time = millis();
   }
