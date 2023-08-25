@@ -89,21 +89,25 @@ void loop() {
       //Serial.print("Error receiving CAN Message...");
       mcp2515_init();
     }
-      //Serial send waste
 
+    /*********TRANSMIT CAN MESSAGE BY UART**********/
+      //Serial send START patern
       Serial.write(0xff);
       Serial.write(0xfc);
       Serial.write(0xfd);
+
       //serial send can structure
-      //for(uint8_t i = 0 ; i < canMsgR.can_dlc + 5 ; i++)
-      for(uint8_t i = 0 ; i < sizeof(canMsgR) ; i++){
-        Serial.write(ptrR[i]);
-        ptrR[i]=0;
-      }
+        Serial.write(ptrR[0]);//send CAN_ID low to uart
+        Serial.write(ptrR[1]);//send CAN_ID hi to uart
+        Serial.write(ptrR[4]);//send CAN_DLC to uart
+        for(uint8_t i = 0 ; i < ptrR[4] ; i++){//send CAN_DATA to uart  (CAN_DLC BYTES)
+          Serial.write(ptrR[8+i]);
+        }
 
       // serial send end of frame patern
       Serial.write(end_of_frame_patern[0]);
       Serial.write(end_of_frame_patern[1]);
+      /*********END TRANSMIT CAN MESSAGE BY UART**********/
   
     time = millis();
   }
